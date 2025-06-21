@@ -1,13 +1,21 @@
 # UnrealRCON
-Unreal Engine plugin with Steam RCON server implementation
+UnrealRCON is a **RCON (Remote Console)** plugin for **Unreal Engine**, designed for servers to remotely receive and handle commands.
 
-# How to install
+## 🔧 Features
+
+- ✅ RCON server protocol implementation
+- 🎮 Built to integrate directly into Unreal Engine project as a plugin
+- 🔁 Easy integration and use
+- 🧪 Simple enought to tailor for your specific needs
+
+## 🚀 Getting Started
+
+### Installation
 1. Download source from latest [releases](https://github.com/GloryOfNight/UnrealRCON/releases)
 2. Unpack source code to Plugins/SteamRCon folder
 3. Regenerate and launch project, make sure SteamRCon enabled in Plugins
-> [!NOTE]
+> [!WARNING]
 > DO NOT download source code from main branch since it could be unstable at times. Only do that from tags or releases page!
-# How to use
 
 ### RCON client
 You can use any Steam RCON compatible client, for example [rcon](https://github.com/n0la/rcon) or [rcon-cli](https://github.com/gorcon/rcon-cli)
@@ -25,59 +33,36 @@ You can use any Steam RCON compatible client, for example [rcon](https://github.
 `exec` Execute unreal engine console command
 
 ### Adding custom commands
-> [!NOTE]
-> By default `USteamRConServerSubsystem` would only be created on Server only builds! If you want to override that befavior take a look in `USteamRConServerSubsystem::ShouldCreateSubsystem`
+(C++ only)
 
-> [!WARNING]
-> Make sure to add `SteamRConServer` to your **project**.build.cs file!
+> [!TIP]
+> Create new [Game Instance Subsystem](https://dev.epicgames.com/documentation/en-us/unreal-engine/programming-subsystems-in-unreal-engine) class to handle custom rcon commands code.
 
+1. Open your project .build.cs file
+   and apply `SteamRConServer` to module dependecies list, just like that:
 ```
 PublicDependencyModuleNames.AddRange(new string[] { "SteamRConServer" });
 ```
-
-Binding commands
+2. In your codebase, add include
 ```
 #include "SteamRConServerSubsystem.h"
-
-void USomeObject::AnyDesiredBindFunction()
-{
-	const auto SteamRConSubsystem = USteamRConServerSubsystem::Get(this);
-	if (SteamRConSubsystem)
-	{
-		const auto CommandCallbackLam = [](const FString& Command) -> FString
-			{
-				// Execute code and write back to connected rcon client
-				FString Output{};
-				Output = TEXT("Player list is . . .");
-				return Output;
-			};
-		SteamRConSubsystem->AddCommandCallback(TEXT("list_players"), FSteamRConServerCommandCallback::CreateLambda(CommandCallbackLam), TEXT("List current players"));
-	}
-}
 ```
-if your command uses argument, use string space separation to separate command arguments from command itself
-
+3. Start implementing 
 ```
-#include "SteamRConServerSubsystem.h"
-
-void USomeObject::AnyDesiredBindFunction()
+const auto SteamRConSubsystem = USteamRConServerSubsystem::Get(this);
+if (SteamRConSubsystem)
 {
+	// Preferably you want bind calls to UObjects not lambda's
 	const auto CommandCallbackLam = [](const FString& Command) -> FString
-	{
-		FString CommandArguments{};
-		int32 SpaceIndex;
-		if (Command.FindChar(TEXT(' '), SpaceIndex))
 		{
-			CommandArguments = Command.Mid(SpaceIndex + 1);
-		}
-		// Sample values:
-		// Command = kick Player1
-		// CommandArguments = Player1
-		// Handle arguments separately from kick command
-		return FString(TEXT("Player kicked"));
-	};
-	SteamRConSubsystem->AddCommandCallback(TEXT("kick"), FSteamRConServerCommandCallback::CreateLambda(CommandCallbackLam), TEXT("kick [PlayerName] from match"));
+			// When it's called, you receive command that you bind for in Command variable
+			// Command could have some additional arguments that you need to handle here
+			// After you done processing command, do not forget write back to RCon client the result of operation
+			FString Output{};
+			Output = TEXT("Player list is . . .");
+			return Output;
+		};
+	// Adding commands handles is easy
+	SteamRConSubsystem->AddCommandCallback(TEXT("list_players"), FSteamRConServerCommandCallback::CreateLambda(CommandCallbackLam), TEXT("List current players"));
 }
 ```
-# See also
-[Steam RCON Specification](https://developer.valvesoftware.com/wiki/Source_RCON_Protocol)
