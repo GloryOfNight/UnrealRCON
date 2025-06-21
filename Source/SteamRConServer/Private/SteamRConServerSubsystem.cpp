@@ -55,18 +55,20 @@ void USteamRConServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     const FTickerDelegate TickDelegate = FTickerDelegate::CreateUObject(this, &USteamRConServerSubsystem::Tick);
     TickHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
 
-    FCoreDelegates::OnPostFork.AddUObject(this, &USteamRConServerSubsystem::OnPostFork);
-
     FSteamRConServer::FSettings Settings{};
     Settings.Port = GetRConPort();
     Settings.Password = GetRConPassword();
 
     if (RConServer.Start(Settings))
     {
+        RConServer.AssignCommandCallback(FSteamRConServer::FHandleReceivedCommandDelegate::CreateUObject(this, &USteamRConServerSubsystem::HandleRConCommand));
+
         AddCommandCallback(TEXT("help"), FSteamRConServer::FHandleReceivedCommandDelegate::CreateUObject(this, &USteamRConServerSubsystem::OnHelpCommand), TEXT("List all available command and some help info"));
         AddCommandCallback(TEXT("exec"), FSteamRConServer::FHandleReceivedCommandDelegate::CreateUObject(this, &USteamRConServerSubsystem::OnExecCommand), TEXT("Execute unreal engine console command"));
 
-        RConServer.AssignCommandCallback(FSteamRConServer::FHandleReceivedCommandDelegate::CreateUObject(this, &USteamRConServerSubsystem::HandleRConCommand));
+        FCoreDelegates::OnPostFork.AddUObject(this, &USteamRConServerSubsystem::OnPostFork);
+
+        UE_LOG(SteamRConServerSubsystem, Display, TEXT("RCon server ready"));
     }
     else
     {
@@ -103,7 +105,7 @@ void USteamRConServerSubsystem::AddCommandCallback(FString Command, FSteamRConSe
         Command = Command.Left(SpaceIndex);
     }
 
-    UE_LOG(SteamRConServerSubsystem, Log, TEXT("Registered command: %s"), *Command);
+    UE_LOG(SteamRConServerSubsystem, Verbose, TEXT("Registered command: %s"), *Command);
 
     FCommandHandle CommandHandle{};
     CommandHandle.Tooltip = InTooltip;

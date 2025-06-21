@@ -25,13 +25,6 @@ bool FSteamRConServer::Start(const FSettings& InSettings)
     RemoteAddress->SetAnyAddress();
     RemoteAddress->SetPort(InSettings.Port);
 
-    const int32 BoundPort = SocketSubsystem->BindNextPort(NewSocket.Get(), *RemoteAddress, 10, 1);
-    if (BoundPort == 0)
-    {
-        UE_LOG(SteamRConServer, Error, TEXT("Failed bind to address: %s"), *RemoteAddress->ToString(true))
-        return false;
-    }
-
     const bool bBlocking = NewSocket->SetNonBlocking();
     if (!bBlocking)
         UE_LOG(SteamRConServer, Warning, TEXT("Failed SetNonBlocking for listen socket"))
@@ -43,6 +36,13 @@ bool FSteamRConServer::Start(const FSettings& InSettings)
     const bool bReuse = NewSocket->SetReuseAddr(InSettings.bAllowPortReuse);
     if (!bReuse)
         UE_LOG(SteamRConServer, Warning, TEXT("Failed SetReuseAddr for listen socket"))
+
+    const int32 BoundPort = SocketSubsystem->BindNextPort(NewSocket.Get(), *RemoteAddress, 10, 1);
+    if (BoundPort == 0)
+    {
+        UE_LOG(SteamRConServer, Error, TEXT("Failed bind to address: %s"), *RemoteAddress->ToString(true))
+        return false;
+    }
 
     const bool bListen = NewSocket->Listen(1);
     if (!bListen)
@@ -67,26 +67,47 @@ void FSteamRConServer::Tick()
     bool bPending{};
     if (ListenSocket->HasPendingConnection(bPending) && bPending)
     {
-        UE_LOG(SteamRConServer, Display, TEXT("New RCON client connected"));
+        auto NewClientSocket = FUniqueSocket(ListenSocket->Accept(TEXT("SteamRConClient")));
+        auto IncomingAddr = GetSocketSubsystem()->CreateInternetAddr();
+        NewClientSocket->GetPeerAddress(*IncomingAddr);
 
-        bClientAuth = false;
-        ClientSocket = FUniqueSocket(ListenSocket->Accept(TEXT("SteamRConClient")));
+        if (ClientSocket && bClientAuth)
+        {
+            NewClientSocket.Reset();
+            UE_LOG(SteamRConServer, Warning, TEXT("Refusing connection for \'%s\' since other client already connected"), *IncomingAddr->ToString(true));
+        }
+        else
+        {
+            bClientAuth = false;
+            ClientSocket = MoveTemp(NewClientSocket);
+            UE_LOG(SteamRConServer, Display, TEXT("Accepting new client connection from \'%s\'"), *IncomingAddr->ToString(true));
 
-        const bool bBlocking = ClientSocket->SetNonBlocking();
-        if (!bBlocking)
-            UE_LOG(SteamRConServer, Warning, TEXT("Failed SetNonBlocking for client socket"))
+            const bool bBlocking = ClientSocket->SetNonBlocking();
+            if (!bBlocking)
+                UE_LOG(SteamRConServer, Warning, TEXT("Failed SetNonBlocking for client socket"))
 
-        const bool bNoDelay = ClientSocket->SetNoDelay();
-        if (!bNoDelay)
-            UE_LOG(SteamRConServer, Warning, TEXT("Failed SetNoDelay for client socket"))
+            const bool bNoDelay = ClientSocket->SetNoDelay();
+            if (!bNoDelay)
+                UE_LOG(SteamRConServer, Warning, TEXT("Failed SetNoDelay for client socket"))
+        }
     }
 
     if (ClientSocket)
     {
         ProcessClientConnection();
 
-        const int64 TimeSinceLastRecvMs = FPlatformTime::ToMilliseconds64(FPlatformTime::Cycles64()) - FPlatformTime::ToMilliseconds64(LastRecvTime);
-        if (TimeSinceLastRecvMs > Settings.ConnectionTimeoutMs)
+        const double Now = FPlatformTime::ToMilliseconds64(FPlatformTime::Cycles64());
+
+        const double TimeSinceLastHeartbeat = Now - FPlatformTime::ToMilliseconds64(LastHeartbeatTime);
+        if (static_cast<int32>(TimeSinceLastHeartbeat) > Settings.HeartbeatTimeMs)
+        {
+            int32 BytesSent{};
+            ClientSocket->Send(nullptr, 0, BytesSent);
+            LastHeartbeatTime = Now;
+        }
+
+        const double TimeSinceLastRecvMs = Now - FPlatformTime::ToMilliseconds64(LastRecvTime);
+        if (static_cast<int32>(TimeSinceLastRecvMs) > Settings.ConnectionTimeoutMs)
         {
             UE_LOG(SteamRConServer, Display, TEXT("RCON client connection timeout"));
             ResetClientConnection();
@@ -196,12 +217,10 @@ void FSteamRConServer::SendClientResponse(const int32 RespId, const int32 RespTy
     Response.Add(0);
     Response.Add(0);
 
-    int32 Sent{};
-    const bool bSend = ClientSocket->Send(Response.GetData(), Response.Num(), Sent);
+    int32 BytesSent{};
+    const bool bSend = ClientSocket->Send(Response.GetData(), Response.Num(), BytesSent);
     if (!bSend)
-    {
         UE_LOG(SteamRConServer, Error, TEXT("Failed to send response, error code %i"), static_cast<int32>(GetSocketSubsystem()->GetLastErrorCode()));
-    }
 }
 
 void FSteamRConServer::ResetClientConnection()

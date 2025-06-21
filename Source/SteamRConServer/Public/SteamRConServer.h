@@ -25,13 +25,15 @@ public:
         FSettings()
             : Password{TEXT("default")}
             , ConnectionTimeoutMs{5000}
+            , HeartbeatTimeMs{500}
             , Port{8000}
             , bAllowPortReuse{false}
         {
         }
 
         FString Password;
-        int64 ConnectionTimeoutMs;
+        int32 ConnectionTimeoutMs;
+        int32 HeartbeatTimeMs;
         uint16 Port;
         bool bAllowPortReuse;
     };
@@ -58,6 +60,8 @@ private:
     FHandleReceivedCommandDelegate Callback{};
 
     int64 LastRecvTime{};
+
+    int64 LastHeartbeatTime{};
 
     bool bClientAuth{};
 };
