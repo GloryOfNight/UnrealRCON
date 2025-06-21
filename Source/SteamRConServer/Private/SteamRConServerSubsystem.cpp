@@ -46,7 +46,7 @@ FString USteamRConServerSubsystem::GetRConPassword()
 bool USteamRConServerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
     const bool bForceEnable = false; // for debug and testing
-    const bool bRealEnable = FParse::Param(FCommandLine::Get(), TEXT("-RConEnable")) && UE_SERVER;
+    const bool bRealEnable = FParse::Param(FCommandLine::Get(), TEXT("RConEnable")) && UE_SERVER;
     return bForceEnable || bRealEnable;
 }
 
