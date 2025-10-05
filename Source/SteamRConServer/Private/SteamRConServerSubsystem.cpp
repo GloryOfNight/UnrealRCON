@@ -2,6 +2,8 @@
 
 #include "SteamRConServerSubsystem.h"
 
+#include "SteamRConSettings.h"
+
 class FExecOutputDevice : public FOutputDevice
 {
 public:
@@ -33,27 +35,54 @@ uint16 USteamRConServerSubsystem::GetRConPort()
 {
     FString ClPort{};
     FParse::Value(FCommandLine::Get(), TEXT("-RConPort="), ClPort);
-    return !ClPort.IsEmpty() ? FCString::Atoi(*ClPort) : 8000;
+    return !ClPort.IsEmpty() ? FCString::Atoi(*ClPort) : USteamRConSettings::Get()->Port;
 }
 
 FString USteamRConServerSubsystem::GetRConPassword()
 {
     FString ClPassword{};
     FParse::Value(FCommandLine::Get(), TEXT("-RConPassword="), ClPassword);
-    return !ClPassword.IsEmpty() ? ClPassword : FString(TEXT("changeme"));
+    return !ClPassword.IsEmpty() ? ClPassword : USteamRConSettings::Get()->Password;
 }
 
 bool USteamRConServerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
-    const bool bForceEnable = false; // for debug and testing
-    const bool bRealEnable = FParse::Param(FCommandLine::Get(), TEXT("RConEnable")) && UE_SERVER;
-    return bForceEnable || bRealEnable;
+#if WITH_EDITOR
+    const bool bAllowCreate = USteamRConSettings::Get()->bAllowInEditorBuild;
+#elif UE_SERVER && UE_BUILD_SHIPPING
+    const bool bAllowCreate = USteamRConSettings::Get()->bAllowInServerShippingBuild;
+#elif UE_SERVER
+    const bool bAllowCreate = USteamRConSettings::Get()->bAllowInServerBuild;
+#elif UE_GAME && UE_BUILD_SHIPPING
+    const bool bAllowCreate = USteamRConSettings::Get()->bAllowInGameShippingBuild;
+#elif UE_GAME
+    const bool bAllowCreate = USteamRConSettings::Get()->bAllowInGameBuild;
+#else
+    const bool bAllowCreate = false;
+#endif
+    return bAllowCreate;
 }
 
 void USteamRConServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-    const FTickerDelegate TickDelegate = FTickerDelegate::CreateUObject(this, &USteamRConServerSubsystem::Tick);
-    TickHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+    const bool bAutoEnable = USteamRConSettings::Get()->bAutoStart;
+    const bool bClEnable = FParse::Param(FCommandLine::Get(), TEXT("RConEnable"));
+    if (bAutoEnable || bClEnable)
+        StartServer();
+}
+
+void USteamRConServerSubsystem::Deinitialize()
+{
+    StopServer();
+}
+
+void USteamRConServerSubsystem::StartServer()
+{
+    if (RConServer.IsStarted())
+    {
+        UE_LOG(SteamRConServerSubsystem, Warning, TEXT("Attempt to start RCon server, when it already started"));
+        return;
+    }
 
     FSteamRConServer::FSettings Settings{};
     Settings.Port = GetRConPort();
@@ -68,7 +97,10 @@ void USteamRConServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
         FCoreDelegates::OnPostFork.AddUObject(this, &USteamRConServerSubsystem::OnPostFork);
 
-        UE_LOG(SteamRConServerSubsystem, Display, TEXT("RCon server ready"));
+        const FTickerDelegate TickDelegate = FTickerDelegate::CreateUObject(this, &USteamRConServerSubsystem::TickServer);
+        TickHandle = FTSTicker::GetCoreTicker().AddTicker(TickDelegate);
+
+        UE_LOG(SteamRConServerSubsystem, Display, TEXT("RCon server ready on port %d"), RConServer.GetBoundPort());
     }
     else
     {
@@ -76,16 +108,21 @@ void USteamRConServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     }
 }
 
-void USteamRConServerSubsystem::Deinitialize()
+void USteamRConServerSubsystem::StopServer()
 {
+    if (!RConServer.IsStarted())
+        return;
+
+    FCoreDelegates::OnPostFork.RemoveAll(this);
     if (TickHandle.IsValid())
     {
         FTSTicker::GetCoreTicker().RemoveTicker(TickHandle);
         TickHandle = FTSTicker::FDelegateHandle();
     }
+    RConServer.Stop();
 }
 
-bool USteamRConServerSubsystem::Tick(float DeltaTime)
+bool USteamRConServerSubsystem::TickServer(float DeltaTime)
 {
     RConServer.Tick();
     return true;

@@ -21,11 +21,25 @@ UnrealRCON is a **RCON (Remote Console)** plugin for **Unreal Engine**, designed
 You can use any Steam RCON compatible client, for example [rcon](https://github.com/n0la/rcon) or [rcon-cli](https://github.com/gorcon/rcon-cli)
 
 ### Startup options
-`-RConEnable` to enable rcon server
+`-RConEnable` auo-start rcon server on startup if allowed
 
 `-RConPort=8000` to set rcon server port. In case of forked server, port + fork id would be used for that fork
 
 `-RConPassoword=changeme` to set rcon server password
+
+### Config
+`DefaultGame.ini`
+```
+[/Script/SteamRConServer.SteamRConSettings]
+Port=8000 # Note: Commandline argument has a priority over config
+Password=changeme # Note: Commandline argument has a priority over config
+bAllowInEditorBuild=True
+bAllowInGameBuild=False
+bAllowInGameShippingBuild=False
+bAllowInServerBuild=True
+bAllowInServerShippingBuild=True
+bAutoStart=False # Note: if true, -RConEnable not required to auto-start rcon server
+```
 
 ### Default commands
 `help` List all available commands

@@ -34,13 +34,17 @@ public:
     void Initialize(FSubsystemCollectionBase& Collection) override;
 
     void Deinitialize() override;
-
-    bool Tick(float DeltaTime);
+    
+    void StartServer();
+    bool IsStarted() const { return RConServer.IsStarted(); };
+    void StopServer();
 
     // A command is single word string without spaces. Everything after space in a command is considered a agrument and ignored
     void AddCommandCallback(FString Command, FSteamRConServerCommandCallback InCallback, const FString& InTooltip);
 
 private:
+    bool TickServer(float DeltaTime);
+
     FString HandleRConCommand(const FString& Command);
 
     FString OnHelpCommand(const FString& Command);
