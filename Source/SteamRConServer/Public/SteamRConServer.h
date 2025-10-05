@@ -44,6 +44,10 @@ public:
 
     void AssignCommandCallback(FHandleReceivedCommandDelegate InCallback);
 
+    int32 GetBoundPort() const { return ListenSocket ? BoundPort : -1; };
+
+    bool IsStarted() const { return bStarted; }
+
 private:
     static ISocketSubsystem* GetSocketSubsystem();
 
@@ -55,6 +59,8 @@ private:
     FSettings Settings{};
 
     FUniqueSocket ListenSocket{};
+    int32 BoundPort{};
+
     FUniqueSocket ClientSocket{};
 
     FHandleReceivedCommandDelegate Callback{};
@@ -64,4 +70,6 @@ private:
     int64 LastHeartbeatTime{};
 
     bool bClientAuth{};
+
+    bool bStarted{};
 };

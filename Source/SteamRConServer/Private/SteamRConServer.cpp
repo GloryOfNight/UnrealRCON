@@ -17,6 +17,12 @@ enum
 
 bool FSteamRConServer::Start(const FSettings& InSettings)
 {
+    if (bStarted)
+    {
+        UE_LOG(SteamRConServer, Warning, TEXT("Attempt to start server, while already started"))
+        return false;
+    }
+
     auto SocketSubsystem = GetSocketSubsystem();
 
     FUniqueSocket NewSocket = SocketSubsystem->CreateUniqueSocket(NAME_Stream, TEXT("SteamRConServer"));
@@ -37,7 +43,7 @@ bool FSteamRConServer::Start(const FSettings& InSettings)
     if (!bReuse)
         UE_LOG(SteamRConServer, Warning, TEXT("Failed SetReuseAddr for listen socket"))
 
-    const int32 BoundPort = SocketSubsystem->BindNextPort(NewSocket.Get(), *RemoteAddress, 10, 1);
+    BoundPort = SocketSubsystem->BindNextPort(NewSocket.Get(), *RemoteAddress, 10, 1);
     if (BoundPort == 0)
     {
         UE_LOG(SteamRConServer, Error, TEXT("Failed bind to address: %s"), *RemoteAddress->ToString(true))
@@ -53,6 +59,7 @@ bool FSteamRConServer::Start(const FSettings& InSettings)
 
     Settings = InSettings;
     ListenSocket = MoveTemp(NewSocket);
+    bStarted = true;
 
     UE_LOG(SteamRConServer, Display, TEXT("RCon started listening on port %d (requested: %d)"), BoundPort, Settings.Port);
 
@@ -119,6 +126,7 @@ void FSteamRConServer::Stop()
 {
     ListenSocket.Reset();
     ResetClientConnection();
+    bStarted = false;
 }
 
 void FSteamRConServer::AssignCommandCallback(FHandleReceivedCommandDelegate InCallback)
