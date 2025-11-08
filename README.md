@@ -18,7 +18,9 @@ UnrealRCON is a **RCON (Remote Console)** plugin for **Unreal Engine**, designed
 > DO NOT download source code from main branch since it could be unstable at times. Only do that from tags or releases page!
 
 ### RCON client
-You can use any Source RCON compatible client, for example [ARRCON]([https://github.com/n0la/rcon](https://github.com/radj307/ARRCON)) or [rcon-cli](https://github.com/gorcon/rcon-cli)
+You can use any Source RCON compatible client, for example [ARRCON](https://github.com/radj307/ARRCON) or [rcon-cli](https://github.com/gorcon/rcon-cli)
+
+Build-in RCON client planned in the future releases.
 
 ### Startup options
 `-RConEnable` auto-start rcon server on startup if allowed
