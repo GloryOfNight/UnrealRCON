@@ -2,20 +2,27 @@
 
 using UnrealBuildTool;
 
-public class SteamRConServerEditor : ModuleRules
+public class RConCommon : ModuleRules
 {
-    public SteamRConServerEditor(ReadOnlyTargetRules Target) : base(Target)
+    public RConCommon(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core",
+                "Core"
+            }
+            );
+
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
+            {
                 "CoreUObject",
                 "Engine",
-                "UnrealEd",
-                "SteamRConServer"
+                "Slate",
+                "SlateCore",
+                "DeveloperSettings"
             }
             );
     }
