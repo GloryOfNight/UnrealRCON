@@ -2,16 +2,17 @@
 
 using UnrealBuildTool;
 
-public class SteamRConServer : ModuleRules
+public class RConServer : ModuleRules
 {
-    public SteamRConServer(ReadOnlyTargetRules Target) : base(Target)
+    public RConServer(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                "Core"
+                "Core",
+                "RConCommon"
             }
             );
 
@@ -22,8 +23,11 @@ public class SteamRConServer : ModuleRules
                 "Engine",
                 "Slate",
                 "SlateCore",
-                "Sockets"
+                "Sockets",
+                "DeveloperSettings"
             }
             );
+
+        PrivateDefinitions.Add("RCON_SERVER_ALLOW_IN_GAME_SHIPPING=0");
     }
 }

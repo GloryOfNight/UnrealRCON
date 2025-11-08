@@ -3,38 +3,38 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Engine/DeveloperSettings.h>
+#include <Modules/ModuleManager.h>
 
-#include "SteamRConSettings.generated.h"
+#include "RConServerSettings.generated.h"
 
 UCLASS(Config = Game)
-class STEAMRCONSERVER_API USteamRConSettings : public UObject
+class RCONSERVER_API URConServerSettings : public UDeveloperSettings
 {
     GENERATED_BODY()
 public:
-    static inline USteamRConSettings* Get()
-    {
-        return GetMutableDefault<USteamRConSettings>();
-    }
+    URConServerSettings();
+
+    static URConServerSettings* Get();
 
     // RCon server default port
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
-    int32 Port{8000};
+    int32 Port{27015};
 
     // RCon server default password
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
-    FString Password{TEXT("changeme")};
+    FString Password{TEXT("1111")};
+
+    UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
+    uint16 MaxActiveConnections{5};
 
     // Allow launching RCon server subsystem in editor build
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
     bool bAllowInEditorBuild{true};
 
-    // Allow launching RCon server subsystem in game build
+    // Allow launching RCon server subsystem in game build. Make sure module to enable build for that target first!
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
     bool bAllowInGameBuild{false};
-
-    // Allow launching RCon server subsystem in game shipping build
-    UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
-    bool bAllowInGameShippingBuild{false};
 
     // Allow launching RCon server subsystem in server build
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
@@ -44,7 +44,7 @@ public:
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
     bool bAllowInServerShippingBuild{true};
 
-    // Allow RCon server subsystem to start automaticly without -RConEnable argument
+    // Allow RCon server subsystem to start automatically without -RConEnable argument
     UPROPERTY(Config, EditAnywhere, Category = "RCon Server Settings")
     bool bAutoStart{false};
 };

@@ -12,27 +12,30 @@ UnrealRCON is a **RCON (Remote Console)** plugin for **Unreal Engine**, designed
 
 ### Installation
 1. Download source from latest [releases](https://github.com/GloryOfNight/UnrealRCON/releases)
-2. Unpack source code to Plugins/SteamRCon folder
-3. Regenerate and launch project, make sure SteamRCon enabled in Plugins
+2. Unpack source code to Plugins/UnrealRCON folder
+3. Regenerate and launch project, make sure UnrealRCON enabled in Plugins
 > [!WARNING]
 > DO NOT download source code from main branch since it could be unstable at times. Only do that from tags or releases page!
 
 ### RCON client
-You can use any Steam RCON compatible client, for example [rcon](https://github.com/n0la/rcon) or [rcon-cli](https://github.com/gorcon/rcon-cli)
+You can use any Source RCON compatible client, for example [ARRCON]([https://github.com/n0la/rcon](https://github.com/radj307/ARRCON)) or [rcon-cli](https://github.com/gorcon/rcon-cli)
 
 ### Startup options
-`-RConEnable` auo-start rcon server on startup if allowed
+`-RConEnable` auto-start rcon server on startup if allowed
 
-`-RConPort=8000` to set rcon server port. In case of forked server, port + fork id would be used for that fork
+`-RConPort=27015` set rcon server port. In case of forked server, port + fork id would be used for that fork
 
-`-RConPassoword=changeme` to set rcon server password
+`-RConPassoword=1111` set rcon server password
+
+`-RConMaxActiveConnections=5` set maximum amount of active connections
 
 ### Config
 `DefaultGame.ini`
 ```
-[/Script/SteamRConServer.SteamRConSettings]
-Port=8000 # Note: Commandline argument has a priority over config
-Password=changeme # Note: Commandline argument has a priority over config
+[/Script/RConServer.RConSettings]
+Port=27015 # Note: Commandline argument has a priority over config
+Password=1111 # Note: Commandline argument has a priority over config
+MaxActiveConnections=5 # Note: Commandline argument has a priority over config
 bAllowInEditorBuild=True
 bAllowInGameBuild=False
 bAllowInGameShippingBuild=False
@@ -53,30 +56,27 @@ bAutoStart=False # Note: if true, -RConEnable not required to auto-start rcon se
 > Create new [Game Instance Subsystem](https://dev.epicgames.com/documentation/en-us/unreal-engine/programming-subsystems-in-unreal-engine) class to handle custom rcon commands code.
 
 1. Open your project .build.cs file
-   and apply `SteamRConServer` to module dependecies list, just like that:
+   and apply `RConServer` to module dependecies list, just like that:
 ```
-PublicDependencyModuleNames.AddRange(new string[] { "SteamRConServer" });
+PublicDependencyModuleNames.AddRange(new string[] { "RConServer" });
 ```
 2. In your codebase, add include
 ```
-#include "SteamRConServerSubsystem.h"
+#include "RConServerSubsystem.h"
 ```
 3. Start implementing 
 ```
-const auto SteamRConSubsystem = USteamRConServerSubsystem::Get(this);
-if (SteamRConSubsystem)
+URConServerSubsystem* RConServerSubsystem = URConServerSubsystem::Get(this);
+if (RConServerSubsystem)
 {
-	// Preferably you want bind calls to UObjects not lambda's
-	const auto CommandCallbackLam = [](const FString& Command) -> FString
+	// Preferably you want bind calls to UObjects not lambda's (FDelegate::CreateUObject)
+	const auto CommandCallbackLam = [this](int32 RequestId, const FString& Command, FString& Response, bool& bDelayResponse)
 		{
-			// When it's called, you receive command that you bind for in Command variable
-			// Command could have some additional arguments that you need to handle here
-			// After you done processing command, do not forget write back to RCon client the result of operation
-			FString Output{};
-			Output = TEXT("Player list is . . .");
-			return Output;
+			Reponse.Append(TEXT("Listing players:"));
+			for (const auto& Player : PlayerList}
+				Reponse.Append(FString::Printf(TEXT(\n%s (%s)), *Player->Nickname, *Player->Id));
 		};
 	// Adding commands handles is easy
-	SteamRConSubsystem->AddCommandCallback(TEXT("list_players"), FSteamRConServerCommandCallback::CreateLambda(CommandCallbackLam), TEXT("List current players"));
+	RConServerSubsystem->AddCommand(TEXT("list players"), FRConServerCommandCallback::CreateWeakLambda(this, CommandCallbackLam), TEXT("List current players"));
 }
 ```
