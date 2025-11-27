@@ -17,13 +17,48 @@ UnrealRCON is a **RCON (Remote Console)** plugin for **Unreal Engine**, designed
 > [!WARNING]
 > DO NOT download source code from main branch since it could be unstable at times. Only do that from tags or releases page!
 
-### RCON client
-You can use any Source RCON compatible client, for example [ARRCON](https://github.com/radj307/ARRCON) or [rcon-cli](https://github.com/gorcon/rcon-cli)
+## RCON client
 
-Build-in RCON client planned in the future releases.
+### Usage
+You can use any external Source RCON compatible client, for example [ARRCON](https://github.com/radj307/ARRCON) or [rcon-cli](https://github.com/gorcon/rcon-cli)
+
+This plugin also provides build-in RCON client, using console and API
+```
+rcon.client.connect <ip> <port> <password>; if argument not provided, it takes default argument from settings
+rcon.client.exec <command>; send execute command to connected server
+rcon.client.exec <command>; disconnects from server
+```
+for the API calls, look into: 
+```
+URConClientSubsystem::Get(this)->Connect(HostAddr,Port, Password);
+URConClientSubsystem::Get(this)->IsConnected();
+URConClientSubsystem::Get(this)->Disconnect();
+int32 RequestId = URConClientSubsystem::Get(this)->SendCommand(InCommand);
+AddRequestCallback(RequestId, Callback);
+```
+
+## RCON server
+
+### Usage
+
+for testing purposes, server supports console commands:
+```
+rcon.server.start; allows you locally start rcon server to test functionality
+rcon.server.stop; stop rcon server
+```
+for the API calls, look into: 
+```
+URConServerSubsystem::Get(this)->StartServer();
+URConServerSubsystem::Get(this)->IsStarted();
+URConServerSubsystem::Get(this)->SendCommandResponse(RequestId, Response);
+URConServerSubsystem::Get(this)->StopServer();
+URConServerSubsystem::Get(this)->AddCommand(InCommand, InCallback, InTooltip, InProperties);
+URConServerSubsystem::Get(this)->AddCommand(InCommandHandle);
+URConServerSubsystem::Get(this)->FindCommandHandle(Command);
+```
 
 ### Startup options
-`-RConEnable` auto-start rcon server on startup if allowed
+`-RConEnable` auto-start rcon server on startup (if subsystem created)
 
 `-RConPort=27015` set rcon server port. In case of forked server, port + fork id would be used for that fork
 

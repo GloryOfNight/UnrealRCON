@@ -24,6 +24,11 @@
 			"Name": "RConServer",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RConClient",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	]
 }
