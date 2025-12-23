@@ -16,7 +16,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: GloryOfNight/UnrealEngine
-          ref: 5.3  # or 5.4, or a tag/branch
           token: ${{ secrets.UE_REPO }} # must have access to UE repo
           path: UE
 
