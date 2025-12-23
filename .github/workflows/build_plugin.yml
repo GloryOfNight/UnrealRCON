@@ -17,7 +17,7 @@ jobs:
         with:
           repository: GloryOfNight/UnrealEngine
           ref: 5.3  # or 5.4, or a tag/branch
-          token: ${{ secrets.GITHUB_TOKEN }} # must have access to UE repo
+          token: ${{ secrets.UE_REPO }} # must have access to UE repo
           path: UE
 
       - name: Setup Unreal dependencies
