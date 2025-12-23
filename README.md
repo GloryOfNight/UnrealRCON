@@ -24,9 +24,9 @@ You can use any external Source RCON compatible client, for example [ARRCON](htt
 
 This plugin also provides build-in RCON client, using console and API
 ```
-rcon.client.connect <ip> <port> <password>; if argument not provided, it takes default argument from settings
-rcon.client.exec <command>; send execute command to connected server
-rcon.client.exec <command>; disconnects from server
+rcon.client.connect <ip> <port> <password> 	# if argument not provided, it takes default argument from settings
+rcon.client.exec <command> 					# send execute command to connected server
+rcon.client.disconnect 						# disconnects from server
 ```
 for the API calls, look into: 
 ```
@@ -43,8 +43,8 @@ AddRequestCallback(RequestId, Callback);
 
 for testing purposes, server supports console commands:
 ```
-rcon.server.start; allows you locally start rcon server to test functionality
-rcon.server.stop; stop rcon server
+rcon.server.start 	# allows you locally start rcon server to test functionality
+rcon.server.stop 	# stop rcon server
 ```
 for the API calls, look into: 
 ```
@@ -70,15 +70,14 @@ URConServerSubsystem::Get(this)->FindCommandHandle(Command);
 `DefaultGame.ini`
 ```
 [/Script/RConServer.RConSettings]
-Port=27015 # Note: Commandline argument has a priority over config
-Password=1111 # Note: Commandline argument has a priority over config
-MaxActiveConnections=5 # Note: Commandline argument has a priority over config
-bAllowInEditorBuild=True
-bAllowInGameBuild=False
-bAllowInGameShippingBuild=False
+Port=27015 					# Note: Commandline argument has a priority over config
+Password=1111 				# Note: Commandline argument has a priority over config
+MaxActiveConnections=5 		# Note: Commandline argument has a priority over config
+bAllowInEditorBuild=True	# Allow launching rcon server in editor
+bAllowInGameBuild=False		# Allow launching rcon server in game (non-shipping) build
 bAllowInServerBuild=True
 bAllowInServerShippingBuild=True
-bAutoStart=False # Note: if true, -RConEnable not required to auto-start rcon server
+bAutoStart=False 			# Note: if true, -RConEnable not required to auto-start rcon server
 ```
 
 ### Default commands
