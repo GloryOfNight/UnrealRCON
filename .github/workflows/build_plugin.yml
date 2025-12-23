@@ -1,0 +1,37 @@
+name: Build Unreal Plugin
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout plugin source
+        uses: actions/checkout@v4
+
+      - name: Checkout Unreal Engine
+        uses: actions/checkout@v4
+        with:
+          repository: EpicGames/UnrealEngine
+          ref: 5.3  # or 5.4, or a tag/branch
+          token: ${{ secrets.GITHUB_TOKEN }} # must have access to UE repo
+          path: UE
+
+      - name: Setup Unreal dependencies
+        shell: powershell
+        working-directory: UE
+        run: |
+          ./Setup.bat
+          ./GenerateProjectFiles.bat
+
+      - name: Build Plugin
+        shell: powershell
+        run: |
+          & UE\Engine\Build\BatchFiles\RunUAT.bat BuildPlugin ^
+            -Plugin="$PWD/UnrealRCon.uplugin" ^
+            -Package="$PWD/Package" ^
+            -Rocket ^
+            -TargetPlatforms=Win64
